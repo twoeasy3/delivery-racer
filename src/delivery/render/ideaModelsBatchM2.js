@@ -64,9 +64,9 @@ export const IDEA_MODELS_BATCH_M2 = {
     // dark: the air dam and the splitter on the road, the grille slots, the rear valance, the sill skirts, the mirrors
     parts(group, k + 'black', TRIM, () => [
       bx(2.02, 0.14, 0.14, 0, 0.2, FZ + 0.02),
-      bx(1.96, 0.03, 0.22, 0, 0.13, FZ + 0.06),
+      bx(1.96, 0.03, 0.14, 0, 0.13, FZ + 0.04),
       bx(0.62, 0.08, 0.02, 0, 0.42, FZ + 0.004),
-      bx(1.2, 0.06, 0.02, 0, 0.3, FZ + 0.06 + 0.04),
+      bx(1.2, 0.06, 0.02, 0, 0.22, FZ + 0.095),
       bx(1.9, 0.12, 0.04, 0, 0.26, BZ - 0.01),
       ...[-1, 1].map(s => bx(0.06, 0.08, 1.9, s * (HALF + 0.02), 0.22, 0)),
       ...[-1, 1].map(s => bx(0.09, 0.06, 0.12, s * (narrowAt(HALF, 0.9, TAPER) + 0.03), 0.9, 0.62)),
@@ -130,9 +130,9 @@ export const IDEA_MODELS_BATCH_M2 = {
       return panelAt([[x0, a[1], zAt(a[1]) + BEV + 0.008], [x1, a[1], zAt(a[1]) + BEV + 0.008], [x1, b[1], zAt(b[1]) + BEV + 0.008], [x0, b[1], zAt(b[1]) + BEV + 0.008]]);
     };
     parts(group, k + 'glass', GLASS, () => [
-      ...sidePanes([doorWin, ...high], SX + 0.006, 0.006),
+      ...sidePanes([doorWin], SX + 0.006), ...sidePanes(high, SX + 0.02),
       screen(-HALF + 0.16, -0.04), screen(0.04, HALF - 0.16),
-      panelAt([[0.42, 1.38, BZ - 0.008], [-0.42, 1.38, BZ - 0.008], [-0.42, 2.2, BZ - 0.008], [0.42, 2.2, BZ - 0.008]]),
+      panelAt([[0.36, 1.62, BZ - 0.016], [-0.36, 1.62, BZ - 0.016], [-0.36, 2.28, BZ - 0.016], [0.36, 2.28, BZ - 0.016]]),
     ]);
     // dark: the front bumper, the grille panel, the windscreen's centre pillar, the rear bumper, the back door's frame, the fold-down
     // step, the mirrors on their arms
@@ -190,7 +190,7 @@ export const IDEA_MODELS_BATCH_M2 = {
       extrudeSide(cab, CW, BEV, CTAPER, 1, 0.08),
       // the front wings: a flat arch cap over each front wheel, out at the cab's width, and the step under the door
       ...[-1, 1].flatMap(s => [
-        flare(AF, 0.86, R + 0.04, R + 0.2, 0.36).translate(s * (CHALF - 0.02) + (s > 0 ? 0.36 : 0), 0, 0),
+        flare(AF, 0.6, R + 0.06, R + 0.22, 0.52).translate(s > 0 ? 1.16 : -0.64, 0, 0),
         bx(0.36, 0.06, 0.6, s * (CHALF - 0.2), 0.86, (CF + AF - R - 0.2) / 2 - 0.1),
       ]),
       // the body: its floor's edge, the tall side walls, the tail board, the front wall standing up behind the cab
@@ -224,8 +224,6 @@ export const IDEA_MODELS_BATCH_M2 = {
     const crown = (g) => g.rotateX(-LEAN).translate(0, CY, CZ);
     parts(group, k + 'accent', accent, () => [
       crown(new THREE.ExtrudeGeometry(crownShape(), { depth: 0.08, bevelEnabled: false, curveSegments: 4 }).translate(0, 0, -0.04)),
-      // the crown's struts back to the cab roof
-      ...[-1, 1].map(s => bx(0.08, 0.06, 0.62, s * 0.9, ROOFC + BEV + 0.03, (CZ + CB) / 2 + 0.14)),
       ...[-1, 1].map(s => bx(0.06, 0.12, CB - 0.1 - BACK + 0.04, s * (BH + 0.005), TOP - 0.02, (BACK + CB - 0.1) / 2)),
       bx(2.52, 0.12, 0.06, 0, TOP - 0.02, BACK - 0.005),
       bx(2.52, 0.12, 0.06, 0, TOP + 0.23, CB - 0.14),
@@ -261,7 +259,7 @@ export const IDEA_MODELS_BATCH_M2 = {
     ]);
     // dark: the chassis rails under the body, the mirrors on their arms, the mud flaps, the grille's panel
     parts(group, k + 'black', TRIM, () => [
-      ...[-1, 1].map(s => bx(0.14, 0.26, BACK - NOSE < 0 ? NOSE - BACK - 0.3 : 0, s * 0.45, 0.98, (NOSE + BACK) / 2 - 0.1)),
+      ...[-1, 1].map(s => bx(0.14, 0.32, 6.72, s * 0.45, 0.95, -0.06)),
       bx(1.2, 0.14, 0.16, 0, R, AF), bx(1.6, 0.16, 0.18, 0, R, AR),
       ...[-1, 1].flatMap(s => [bx(0.3, 0.04, 0.04, s * (CHALF + 0.12), 2.0, CF - 0.08), bx(0.07, 0.36, 0.16, s * (CHALF + 0.26), 2.04, CF - 0.08)]),
       ...[-1, 1].map(s => bx(0.5, 0.5, 0.03, s * 1.02, 0.5, AR - R - 0.14)),
