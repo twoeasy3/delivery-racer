@@ -14,6 +14,7 @@ import { LEVEL, LEVEL_INDEX } from '../levels.js';
 import { levelName } from '../levelText.js';
 import { Tiers } from '../tiers.js';
 import { CAR, selectCar } from '../cars.js';
+import { recordPick } from './lastpick.js';
 import { Game } from '../game.js';
 import { Replay } from '../replay.js';
 import { nudgeOn, nudgeFor, betterStats } from './rides.js';
@@ -60,6 +61,7 @@ const showCard = () => {
   button.addEventListener('click', async () => {
     if (n.offer === 'buy' && !await buyCar(n.ride, { confirm: false })) return; // (the button already says the car and its price: bought on the tap; the cutscene plays over the results)
     selectCar(n.ride.id);
+    recordPick(n.ride.id); // (render/lastpick.js)
     button.disabled = true;
     button.textContent = n.ride.name + ' ready';
   });
