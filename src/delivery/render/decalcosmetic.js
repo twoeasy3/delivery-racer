@@ -116,33 +116,48 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
       for (const p of out) p.z1 -= INSET;
       return out.filter(p => p.z1 - p.z0 >= 0.3);
     };
+    // a band whose wanted height finds no run (the Rocket Fin's Tiger: 0.34 m over a flank that curves), on the coarse probe or on the fine one, is
+    // tried thinner, three more times: a thinner band over none (CHECKLIST 525); the first height that dresses a flank is the one used, so a car
+    // that has a band at the full height is unchanged
     let best = null;
-    const cands = [];
-    for (const z of seeds) {
-      const h = Math.min(want, (z.y1 - z.y0) * 0.85);
-      for (const yc of [(z.y0 + z.y1) / 2, ...[0, 1, 2, 3, 4].map(k => z.y1 - h / 2 - 0.005 - k * 0.02), z.y0 + h / 2 + 0.01]) { // (the middle, a few heights from the top down, the bottom)
-        if (yc - h / 2 < z.y0 - 1e-6) continue;
-        const ya = yc - h / 2, yb = yc + h / 2, per = sides.map(side => ({ side, pieces: piecesAt(side, ya, yb) }));
-        const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(0, ...lens); // (an unbroken band wins: its longest piece counts in full, the others a third)
-        const both = per.every(p => p.pieces.length) ? 1 : 0.25; // (a height that dresses both flanks over one that leaves a flank bare: CHECKLIST 508, the coach)
-        const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)) * both; // (a thinner unbroken band over a broken full-height one)
-        if (score > 0) cands.push({ score, h, ya, yb, per });
-        if (score > 0 && (!best || score > best.score + 1e-6)) best = { score, h, ya, yb, per };
-        if (score > 0) cands.push({ score, h, ya, yb });
-      }
-    }
-    if (!best) return [];
-    if (opts.runs) { // (the height chosen on the coarse probe; its runs found on the fine one. A flank the fine probe leaves bare (thin ribs the
-      // 8 cm probe stepped over: the Coach's Tiger) passes to the next best height that keeps both flanks dressed, if any: CHECKLIST 508)
-      const fineOf = (c) => sides.map(side => ({ side, pieces: piecesAt(side, c.ya, c.yb, true) }));
-      best.per = fineOf(best);
-      if (!best.per.every(p => p.pieces.length)) {
-        for (const c of cands.filter(c => c !== best && c.per.every(p => p.pieces.length)).sort((a, b) => b.score - a.score).slice(0, 6)) {
-          const per = fineOf(c);
-          if (per.every(p => p.pieces.length)) { best = { ...c, per }; break; }
+    for (const shrink of [1, 0.75, 0.55, 0.4]) {
+      let top = null;
+      const cands = [];
+      for (const z of seeds) {
+        const h = Math.min(want * shrink, (z.y1 - z.y0) * 0.85);
+        for (const yc of [(z.y0 + z.y1) / 2, ...[0, 1, 2, 3, 4].map(k => z.y1 - h / 2 - 0.005 - k * 0.02), z.y0 + h / 2 + 0.01]) { // (the middle, a few heights from the top down, the bottom)
+          if (yc - h / 2 < z.y0 - 1e-6) continue;
+          const ya = yc - h / 2, yb = yc + h / 2, per = sides.map(side => ({ side, pieces: piecesAt(side, ya, yb) }));
+          const lens = per.flatMap(p => p.pieces.map(r => r.z1 - r.z0)), long = Math.max(0, ...lens); // (an unbroken band wins: its longest piece counts in full, the others a third)
+          const both = per.every(p => p.pieces.length) ? 1 : 0.25; // (a height that dresses both flanks over one that leaves a flank bare: CHECKLIST 508, the coach)
+          const score = (long + (lens.reduce((t, l) => t + l, 0) - long) / 3) * Math.sqrt(Math.min(1, h / want)) * both; // (a thinner unbroken band over a broken full-height one)
+          if (score > 0) cands.push({ score, h, ya, yb, per });
+          if (score > 0 && (!top || score > top.score + 1e-6)) top = { score, h, ya, yb, per };
         }
       }
+      if (!top) continue;
+      if (opts.runs) { // (the height chosen on the coarse probe; its runs found on the fine one. A flank the fine probe leaves bare (thin ribs the
+        // 8 cm probe stepped over: the Coach's Tiger) passes to the next best height that keeps both flanks dressed, if any: CHECKLIST 508)
+        const fineOf = (c) => sides.map(side => ({ side, pieces: piecesAt(side, c.ya, c.yb, true) }));
+        top.per = fineOf(top);
+        if (!top.per.every(p => p.pieces.length)) {
+          for (const c of cands.filter(c => c !== top && c.per.every(p => p.pieces.length)).sort((a, b) => b.score - a.score).slice(0, 6)) {
+            const per = fineOf(c);
+            if (per.every(p => p.pieces.length)) { top = { ...c, per }; break; }
+          }
+        }
+        if (!top.per.some(p => p.pieces.length)) { // (both flanks bare on the fine probe: the next best height that dresses either)
+          for (const c of cands.filter(c => c !== top).sort((a, b) => b.score - a.score).slice(0, 6)) {
+            const per = fineOf(c);
+            if (per.some(p => p.pieces.length)) { top = { ...c, per }; break; }
+          }
+        }
+        if (!top.per.some(p => p.pieces.length)) continue; // (nothing at this height: a thinner band)
+      }
+      best = top;
+      break;
     }
+    if (!best) return [];
     return best.per.flatMap(({ side, pieces }) => pieces.map(p => ({ z0: p.z0, z1: p.z1, y0: best.ya, y1: best.yb, cell: [0, 0, (p.z1 - p.z0) / (best.h * d.aspect), 1], zone: p.zone || 'run', ...(side ? { side } : {}) })));
   }
   // a panel or a badge: on the zone it is biggest in (a tie: the one nearer the nose)
@@ -165,9 +180,10 @@ export const decalLayout = (d, zones, S = 1, opts = {}) => {
 const STEP = 0.02, SMOOTH = 0.004, COARSE = 4, LAT = 0.01;
 const PAINT = new Map();
 const paintRuns = (view, car) => {
-  const key = car.id;
+  const z0 = view.box.min.z, nz = Math.floor((view.box.max.z - z0) / STEP) + 1;
+  const key = car.id + '|' + z0.toFixed(3) + '|' + nz; // (the rows are cells along z from z0: a model measured longer or shorter, with a wing or a rack on, is another set: CHECKLIST 525)
   if (!PAINT.has(key)) PAINT.set(key, { rows: { L: new Map(), R: new Map() }, rays: 0 });
-  const P = PAINT.get(key), z0 = view.box.min.z, nz = Math.floor((view.box.max.z - z0) / STEP) + 1;
+  const P = PAINT.get(key);
   // a row of rays at a height on the 1 cm lattice (shared by every band that asks), each cell cast when first asked
   const row = (side, j) => {
     let r = P.rows[side].get(j);
@@ -208,10 +224,10 @@ export const forgetPaintRuns = () => PAINT.clear(); // (for a check)
 // ---- the wrapped geometry, per car + design (model frame), kept ----
 const GEO = new Map();
 const wrapDecal = (model, car, d) => {
-  const k = car.id + '|' + d.id;
-  if (GEO.has(k)) return GEO.get(k);
   const t0 = (typeof performance !== 'undefined' ? performance : Date).now();
-  const view = flankView(model), length = view.box.max.z - view.box.min.z, S = vehicleScale(length);
+  const view = flankView(model), k = car.id + '|' + d.id + '|' + view.box.min.z.toFixed(3) + '|' + view.box.max.z.toFixed(3);
+  if (GEO.has(k)) return GEO.get(k);
+  const length = view.box.max.z - view.box.min.z, S = vehicleScale(length);
   const key = decalKey(car), paint = d.kind === 'band' ? paintRuns(view, car) : null, rays0 = paint ? paint.stats.rays : 0;
   const rects = decalLayout(d, pairedZones(key), S, paint ? { runs: paint.runs, seeds: [...zonesFor(key, 'L'), ...zonesFor(key, 'R')], zonesOf: (side) => zonesFor(key, side) } : {}), out = { pos: [], nor: [], uv: [], col: [] }, pieces = [];
   for (const [s, side] of [[-1, 'L'], [1, 'R']]) for (const r of rects) if (!r.side || r.side === side) pieces.push({ side, zone: r.zone, rect: r, ...wrapRect(view, s, r, { cell: r.cell, map: 'forward', adaptive: true }, out, FLANK.LIFT) });
@@ -305,9 +321,10 @@ const applyNow = (model) => {
   if (d && !dark) {
     const ink = inkOf(d, c.colour, plan.car, plan.evil), { key, look } = lookFor(d, ink);
     if (!plan.mesh && look) {
-      const g = wrapDecal(model, plan.car, d);
-      plan.stats = g.stats;
-      if (g.pos.length) { plan.mesh = meshFor(model, g, look.material); plan.designId = d.id; forgetDents(model); }
+      let g = null;
+      try { g = wrapDecal(model, plan.car, d); } catch (error) { console.warn('decal ' + d.id + ' on ' + plan.carId + ': ' + (error?.message || error)); plan.error = String(error?.message || error); } // (a car that fails shows none; the screen goes on: CHECKLIST 525)
+      if (g) plan.stats = g.stats;
+      if (g?.pos.length) { plan.mesh = meshFor(model, g, look.material); plan.designId = d.id; forgetDents(model); }
     }
     if (plan.mesh && look && plan.lookKey !== key) setMaterial(plan.mesh, look.material);
     plan.lookKey = plan.mesh && look ? key : null;
